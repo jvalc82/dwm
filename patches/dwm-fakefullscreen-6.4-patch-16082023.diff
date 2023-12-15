@@ -1,0 +1,90 @@
+diff --git a/config.h b/config.h
+index 8f8957b..7f63a4a 100644
+--- a/config.h
++++ b/config.h
+@@ -61,7 +61,7 @@ static const Rule rules[] = {
+ static float mfact     = 0.55; /* factor of master area size [0.05..0.95] */
+ static int nmaster     = 1;    /* number of clients in master area */
+ static int resizehints = 1;    /* 1 means respect size hints in tiled resizals */
+-static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen window */
++static const int lockfullscreen = 0; /* 1 will force focus on the fullscreen window */
+ 
+ #define FORCE_VSPLIT 1  /* nrowgrid layout: force two clients to always split vertically */
+ #include "vanitygaps.c"
+@@ -69,8 +69,8 @@ static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen win
+ static const Layout layouts[] = {
+ 	/* symbol     arrange function */
+ 	{ "[]=",      tile },    /* first entry is default */
+-	{ "[M]",      monocle },
+ 	{ "[@]",      spiral },
++	{ "[M]",      monocle },
+ 	{ "[\\]",     dwindle },
+ 	{ "H[]",      deck },
+ 	{ "TTT",      bstack },
+@@ -157,8 +157,8 @@ static const Key keys[] = {
+ 
+     /* DWM layouts */
+ 	{ MODKEY,                       XK_t,           setlayout,      {.v = &layouts[0]} /* tile */ },
+-	{ MODKEY|ShiftMask,             XK_t,           setlayout,      {.v = &layouts[1]} /* monocle */ },
+-	{ MODKEY,                       XK_m,           setlayout,      {.v = &layouts[2]} /* spiral */ },
++	{ MODKEY|ShiftMask,             XK_t,           setlayout,      {.v = &layouts[1]} /* spiral */ },
++	{ MODKEY,                       XK_m,           setlayout,      {.v = &layouts[2]} /* monocle */ },
+ 	{ MODKEY|ShiftMask,             XK_f,           setlayout,      {.v = &layouts[3]} /* dwindle */ },
+     { MODKEY,                       XK_i,           setlayout,      {.v = &layouts[4]} /* deck */ },
+     { MODKEY|ShiftMask,             XK_i,           setlayout,      {.v = &layouts[5]} /* bstack */ },
+@@ -171,6 +171,7 @@ static const Key keys[] = {
+     { MODKEY,                       XK_c,           setlayout,      {.v = &layouts[12]} /* centeredfloatingmaster */ },
+ 
+ 	{ MODKEY,                       XK_f,           fullscreen,     {0} },
++    { MODKEY|ShiftMask,             XK_c,           fakefullscreen, {1} },
+ 	{ MODKEY,                       XK_space,       setlayout,      {0} },
+ 	{ MODKEY|ShiftMask,             XK_space,       togglefloating, {0} },
+ 	{ MODKEY,                       XK_s,           togglesticky,   {0} },
+diff --git a/dwm.c b/dwm.c
+index 55d586c..34f607c 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -228,6 +228,7 @@ static void setclientstate(Client *c, long state);
+ static void setfocus(Client *c);
+ static void setfullscreen(Client *c, int fullscreen);static void setsticky(Client *c, int sticky);
+ static void fullscreen(const Arg *arg);
++static void fakefullscreen(const Arg *arg);
+ static void setlayout(const Arg *arg);
+ static void setcfact(const Arg *arg);
+ static void setmfact(const Arg *arg);
+@@ -1597,15 +1598,33 @@ Layout *last_layout;
+ void
+ fullscreen(const Arg *arg)
+ {
+-	if (selmon->showbar) {
++    /*if(!selmon->sel)*/
++        /*setfullscreen(selmon->sel, !selmon->sel->isfullscreen);*/
++    if (selmon->showbar) {
+ 		for(last_layout = (Layout *)layouts; last_layout != selmon->lt[selmon->sellt]; last_layout++);
+ 		setlayout(&((Arg) { .v = &layouts[2] }));
+ 	} else {
+ 		setlayout(&((Arg) { .v = last_layout }));
+ 	}
+-	togglebar(arg);
++
++    togglebar(arg);
+ }
+ 
++
++void
++fakefullscreen(const Arg *arg)
++{
++    if(selmon->sel != NULL) {
++        if(!selmon->sel->isfullscreen)
++            setfullscreen(selmon->sel, 1);
++        else
++            setfullscreen(selmon->sel, 0);
++
++        togglebar(arg);
++    }
++}
++
++
+ void
+ setsticky(Client *c, int sticky)
+ {
